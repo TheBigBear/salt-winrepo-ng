@@ -37,7 +37,7 @@ handbrake:
 # correctly in `pkg.list_pkgs` and to allow for removal using `pkg.remove`
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-  {% for version in ['0.10.5' %}
+  {% for version in ['0.10.5'] %}
   '{{ version }}':
     skip_urltest: True
     full_name: 'Handbrake {{ version }}'
