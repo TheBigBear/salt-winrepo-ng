@@ -13,7 +13,7 @@ $script_path = $script_path.DirectoryName
 
 # Define variables
 $base_url="https://github.com/KoenZomers/pfSenseBackup/releases/download"
-$filename = "pfSenseBackup.exe"
+$filename = "pfSenseBackupv$version-win-x64.exe"
 $url = "$base_url/$version/$filename"
 $exe_file = "$script_path\$filename"
 $date = Get-Date -Format "yyyyMMdd"
