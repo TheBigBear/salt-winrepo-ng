@@ -5,7 +5,8 @@
     {% set PROGRAM_FILES = "%ProgramFiles%" %}
 {% endif %}
 npp:
-  {% for version in ['7.9.5', 
+  {% for version in ['8.0',
+  					 '7.9.5', 
   					 '7.9.4',
 					 '7.9.3',
 					 '7.9.2',
