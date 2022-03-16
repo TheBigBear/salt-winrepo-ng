@@ -5,7 +5,27 @@
     {% set PROGRAM_FILES = "%ProgramFiles%" %}
 {% endif %}
 npp:
-  {% for version in ['7.9.5', 
+  {% for version in ['8.3.3',
+					 '8.3.2',
+					 '8.3.1',
+					 '8.3',
+					 '8.2.1',
+					 '8.2',
+                                         '8.1.9.3',
+                                         '8.1.9.2',
+                                         '8.1.9.1',
+                                         '8.1.9',
+                                         '8.1.8',
+                                         '8.1.7',
+                                         '8.1.6',
+                                         '8.1.5',
+                                         '8.1.4',
+                                         '8.1.3',
+                                         '8.1.2',
+                                         '8.1.1',
+                                         '8.1',
+                                         '8',
+                                         '7.9.5', 
   					 '7.9.4',
 					 '7.9.3',
 					 '7.9.2',
@@ -36,7 +56,7 @@ npp:
 #
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Below are versions of Notepad Plus Plus that have had the installer assets removed from gihub.
+# Below are versions of Notepad Plus Plus that have had the installer assets removed from github.
 # An uninstall only definition will remain here so the packages will show up
 # correctly in `pkg.list_pkgs` and to allow for removal using `pkg.remove`
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
