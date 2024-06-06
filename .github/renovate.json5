@@ -1,0 +1,16 @@
+{
+  "extends": [
+    "config:recommended",
+    ":enablePreCommit",
+    ":semanticCommitScopeDisabled",
+    ":semanticPrefixChore",
+    "helpers:pinGitHubActionDigestsToSemver",
+    "regexManagers:githubActionsVersions",
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["python/cpython"],
+      "separateMinorPatch": true,
+    },
+  ],
+}

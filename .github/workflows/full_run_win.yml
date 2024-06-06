@@ -17,20 +17,20 @@ jobs:
       salt-latest: ${{ steps.get-salt-versions.outputs.salt-latest }}
     steps:
       - id: get-salt-versions
-        uses: dafyddj/get-salt-versions@v2
+        uses: dafyddj/get-salt-versions@ccd756f786fed6dafcb103f3537fd7edf9151263 # v3.3.0
   test:
     name: Run URL tests
     needs: gsv
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - name: Setup Salt
-        uses: dafyddj/setup-salt-win@v2
+        uses: dafyddj/setup-salt-win@1fe09b1c0cdb721a43f9e5faa9bd079af8701803 # v2.2.0
         with:
           salt-version: ${{ needs.gsv.outputs.salt-latest }}
       - name: Setup `pip` dependencies
         run: |
-          salt-pip install python-magic-bin tabulate
+          salt-pip install -r .cicd/requirements.txt
           if ($LASTEXITCODE) {
               Write-Host ("::error title=salt-pip::salt-pip returned exit code: $LASTEXITCODE")
               exit 1
