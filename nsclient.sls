@@ -1,36 +1,45 @@
-nsclient:
-  {% for split_version in [
-    ['0.5.3', '4'],
-    ['0.5.2', '39'],
-    ['0.5.2', '29'],
-    ['0.5.1', '46'],
-    ['0.5.1', '44'],
-    ['0.5.0', '62'],
-    ['0.4.4', '23'],
-    ['0.4.4', '19'],
-    ['0.4.3', '143'],
-    ['0.4.3', '88']
-   ] %}
+{% load_yaml as versions -%}
+# renovate: datasource=github-releases depName=nscp packageName=mickem/nscp
+- '0.6.7'
+- '0.6.6'
+- '0.6.5'
+- '0.6.4'
+- '0.5.3.4'
+- '0.5.2.39'
+- '0.5.2.29'
+- '0.5.1.46'
+- '0.5.1.45'
+- '0.5.0.62'
+- '0.4.4.23'
+- '0.4.4.19'
+- '0.4.3.143'
+- '0.4.3.88'
+{% endload -%}
 
-  {% if split_version[0][2] > '4' %} # versions prior to 0.5.xxxx had 3 dots
-    {% set version = "0".join(split_version) %}
-  {% else %}
-    {% set version = ".".join(split_version) %}
-  {% endif %}
-  {% set file_version = ".".join(split_version) %}
-  '{{ version }}':
-    {% if grains['cpuarch'] == 'AMD64' %}
-    full_name:  'NSClient++ (x64)'
-    installer: 'https://github.com/mickem/nscp/releases/download/{{ file_version }}/NSCP-{{ file_version }}-x64.msi'
-    uninstaller: 'https://github.com/mickem/nscp/releases/download/{{ file_version }}/NSCP-{{ file_version }}-x64.msi'
-    {% else %}
-    full_name:  'NSClient++ (x86)'
-    installer: 'https://github.com/mickem/nscp/releases/download/{{ file_version }}/NSCP-{{ file_version }}-Win32.msi'
-    uninstaller: 'https://github.com/mickem/nscp/releases/download/{{ file_version }}/NSCP-{{ file_version }}-Win32.msi'
-    {% endif %}
-    install_flags: '/quiet'
-    uninstall_flags: '/quiet'
-    msiexec: True
-    locale: en_US
-    reboot: False
-  {% endfor %}
+{%- if grains["cpuarch"] == "x86" %}
+  {%- set arch_file = "Win32" %}
+  {%- set arch_name = "x86" %}
+{%- endif %}
+
+nsclient:
+{%- for version in versions %}
+  {#- v0.5.x.x up to v0.6.4 Windows display versions have only three parts (e.g. 0.5.2039) #}
+  {#- v0.6.5 and newer have display versions similar to 0.6.5.000 #}
+  {%- if salt["pkg.compare_versions"](version, ">=", "0.5") %}
+    {%- set parts = version.split(".") %}
+    {%- set major, minor, patch = parts[:3] %}
+    {%- set build = parts[3]|d("0") %}
+    {%- if salt["pkg.compare_versions"](version, "<", "0.6.5") %}
+      {%- set display_version = ".".join([major, minor, patch ~ build.zfill(3)]) %}
+    {%- else %}
+      {%- set display_version = ".".join([major, minor, patch, build.zfill(3)]) %}
+    {%- endif %}
+  {%- endif %}
+
+  '{{ display_version|d(version) }}':
+    full_name:  NSClient++ ({{ arch_name|d("x64") }})
+    installer: https://github.com/mickem/nscp/releases/download/{{ version }}/NSCP-{{ version }}-{{ arch_file|d("x64") }}.msi
+    install_flags: /qn /norestart
+    uninstall_flags: /qn /norestart
+    msiexec: true
+{%- endfor %}

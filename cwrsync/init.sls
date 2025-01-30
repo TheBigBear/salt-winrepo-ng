@@ -7,6 +7,11 @@
 # - remove.ps1
 
 {%- load_yaml as versions %}
+- 6.3.1
+- 6.3.0
+- 6.2.12
+- 6.2.11
+- 6.2.10
 - 6.2.9
 - 6.2.8
 - 6.2.7
@@ -18,8 +23,8 @@ cwrsync:
 {% for version in versions %}
   '{{ version }}':
     full_name: 'cwRsync'
-    installer: 'salt://win/repo-ng/salt-winrepo-ng/cwrsync/install.cmd'
+    installer: 'salt://win/repo-ng/salt-winrepo-ng/_/cwrsync/install.cmd'
     install_flags: {{ version }}
-    uninstaller: 'salt://win/repo-ng/salt-winrepo-ng/cwrsync/remove.cmd'
+    uninstaller: 'salt://win/repo-ng/salt-winrepo-ng/_/cwrsync/remove.cmd'
     cache_dir: True
 {% endfor %}
