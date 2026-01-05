@@ -6,46 +6,49 @@ on:
   - workflow_call
   - workflow_dispatch
 
+env:
+  REPO_JSON_ARTIFACT: repo_data
+  REPO_JSON_FILE: repo.json
+
 jobs:
   should-run:
     name: Should run
-    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       should-run: ${{ steps.action.outputs.should-run }}
     steps:
       - id: action
-        uses: techneg-it/should-workflow-run@dcbb88600d59ec2842778ef1e2d41f680f876329 # v1.0.0
+        uses: techneg-it/should-workflow-run@eff19348eb884f57e05bc6f05ae48ece3af14714 # v1.0.1
   pre-commit:
     name: Run `pre-commit`
     needs: should-run
     if: fromJSON(needs.should-run.outputs.should-run)
-    runs-on: ubuntu-latest
-    env:
-      # renovate: datasource=github-releases depName=actions/python-versions extractVersion=^(?<version>\S+)-\d+$
-      PYTHON_VERSION: 3.12.3
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
-      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: 3.14.2
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
   gsv:
     name: Get Salt versions
     needs: should-run
     if: fromJSON(needs.should-run.outputs.should-run)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       salt-versions-els: ${{ steps.get-salt-versions.outputs.salt-versions-els }}
       salt-versions: ${{ steps.get-salt-versions.outputs.salt-versions }}
       salt-latest: ${{ steps.get-salt-versions.outputs.salt-latest }}
     steps:
       - id: get-salt-versions
-        uses: dafyddj/get-salt-versions@ccd756f786fed6dafcb103f3537fd7edf9151263 # v3.3.0
+        uses: dafyddj/get-salt-versions@a99fdaccbf1581f6f7b855f27ac29cc775861b93 # v3.4.13
   refresh_db:
     name: Test `pkg.refresh_db`
     needs: gsv
-    runs-on: windows-latest
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
@@ -53,11 +56,11 @@ jobs:
           - ${{ fromJSON(needs.gsv.outputs.salt-versions-els) }}
           - ${{ fromJSON(needs.gsv.outputs.salt-versions) }}
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           path: win/repo-ng
       - name: Setup Salt
-        uses: dafyddj/setup-salt-win@1fe09b1c0cdb721a43f9e5faa9bd079af8701803 # v2.2.0
+        uses: dafyddj/setup-salt-win@a81ff6460b4847498f56176fce5b5f76c5fc5de0 # v3.1.0
         with:
           salt-version: ${{ matrix.salt-version }}
           custom-config: |
@@ -74,13 +77,31 @@ jobs:
               exit 1
           }
           $pkgs
+      - name: Run `salt-call pkg.get_repo_data` (Only for latest Salt version)
+        if: needs.gsv.outputs.salt-latest == matrix.salt-version
+        run: |
+          salt-call --out=json pkg.get_repo_data > $env:REPO_JSON_FILE
+          if ($LASTEXITCODE) {
+              Write-Host ("::error title=salt-call::salt-call returned exit code: $LASTEXITCODE")
+              exit 1
+          }
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: needs.gsv.outputs.salt-latest == matrix.salt-version
+        with:
+          if-no-files-found: error
+          name: ${{ env.REPO_JSON_ARTIFACT }}
+          path: ${{ env.REPO_JSON_FILE }}
+          retention-days: 10
   test:
     name: Run URL tests
     needs:
       - gsv
-    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    runs-on: windows-2025
     steps:
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - id: changed-files
         name: Get changed files
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
@@ -92,7 +113,7 @@ jobs:
                 - '**/*.sls'
       - name: Setup Salt
         if: steps.changed-files.outputs.sls == 'true'
-        uses: dafyddj/setup-salt-win@1fe09b1c0cdb721a43f9e5faa9bd079af8701803 # v2.2.0
+        uses: dafyddj/setup-salt-win@a81ff6460b4847498f56176fce5b5f76c5fc5de0 # v3.1.0
         with:
           salt-version: ${{ needs.gsv.outputs.salt-latest }}
       - name: Setup `pip` dependencies
@@ -109,10 +130,56 @@ jobs:
           & "C:\Program Files\Salt Project\Salt\Scripts\python.exe" .\.cicd\tests.py ${{ join(fromJSON(steps.changed-files.outputs.sls_files), ' ') }}
   results:
     name: Collect results
-    needs:
-      - pre-commit
-      - refresh_db
-      - test
-    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      checks: read
+    runs-on: ubuntu-24.04
+    env:
+      # renovate: datasource=npm depName=conventional-changelog-conventionalcommits
+      CC_CONV_COMMITS_VERSION: 9.1.0
     steps:
-      - run: echo "Tests succeeded!"
+      - uses: poseidon/wait-for-status-checks@899c768d191b56eef585c18f8558da19e1f3e707 # v0.6.0
+        with:
+          ignore: Collect results
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          sparse-checkout: |
+            .cicd/
+            .releaserc.cjs
+      - id: sem-rel
+        uses: codfish/semantic-release-action@6c65402abb31a48c3f7396d7d099da015be67c2b # v4.0.1
+        with:
+          additional-packages: conventional-changelog-conventionalcommits@${{ env.CC_CONV_COMMITS_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        if: runner.debug || fromJSON(steps.sem-rel.outputs.new-release-published)
+      - name: Transform dumped repo data to Renovate-style JSON
+        if: runner.debug || fromJSON(steps.sem-rel.outputs.new-release-published)
+        run: |
+          if [ -f "$REPO_JSON_FILE" ]; then
+            .cicd/transform-json < "$REPO_JSON_FILE"
+            echo "::group::Display resulting directory structure"
+            ls --almost-all --recursive --ignore node_modules --ignore .git
+            echo "::endgroup::"
+          else
+            echo "::error ::Data file '$REPO_JSON_FILE' not found."
+            exit 1
+          fi
+      - uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        if: fromJSON(steps.sem-rel.outputs.new-release-published)
+        with:
+          commit_message: |
+            deploy: ${{ steps.sem-rel.outputs.git-tag }}
+          destination_dir: ${{ steps.sem-rel.outputs.git-tag }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
+        if: fromJSON(steps.sem-rel.outputs.new-release-published)
+        with:
+          commit_message: |
+            deploy: ${{ steps.sem-rel.outputs.git-tag }} on ${{ steps.sem-rel.outputs.channel }}
+          destination_dir: ${{ steps.sem-rel.outputs.channel }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

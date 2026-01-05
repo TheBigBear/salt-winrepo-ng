@@ -12,18 +12,36 @@
 
 # Starting in Version 3006 salt standardized builds across all OSes on the
 # Relative Environment for Python project (relenv). The url changed as a result
-{%- load_yaml as versions_relenv %}
-- 3007.1
+# Use Renovate to apply automatic version updates. Due to the way Renovate works
+# each major version must be updated separately (otherwise all versions would be
+# updated to the latest version). New major versions e.g. 3008.0 must be added manually.
+{%- load_yaml as relenv_versions %}
+# renovate: datasource=github-tags depName=salt-3007.x packageName=saltstack/salt
+- '3007.10'
+- '3007.9'
+- '3007.8'
+- '3007.7'
+- '3007.6'
+- '3007.5'
+- '3007.4'
+- '3007.3'
+- '3007.2'
+- '3007.1'
 - 3007.0
+# renovate: datasource=github-tags depName=salt-3006.x packageName=saltstack/salt
+- '3006.18'
+- '3006.17'
+- '3006.16'
+- '3006.15'
+- '3006.14'
+- '3006.13'
+- '3006.12'
+- '3006.11'
+- '3006.10'
+- '3006.9'
 - 3006.8
 - 3006.7
 - 3006.6
-{%- endload %}
-
-# Starting in Version 3004 salt is installed in ProgramData by default
-# The uninstaller will be in ProgramData\Salt Project\Salt
-{%- load_yaml as versions_classic %}
-- 3005.5
 {%- endload %}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,14 +50,18 @@
 # using winrepo has been removed.
 # An uninstall only definition will remain here so the packages will show up
 # correctly in `pkg.list_pkgs` and to allow for removal using `pkg.remove`
+# Additionally, as of 2024-10-30 packages are no longer hosted on AWS. As part
+# of the migration, only the latest 2 major versions are available for
+# download.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{%- load_yaml as versions_cve %}
+{%- load_yaml as remove_only_versions %}
 - 3006.5
 - 3006.4
 - 3006.3
 - 3006.2
 - 3006.1
 - 3006.0
+- 3005.5
 - 3005.4
 - 3005.3
 - 3005.2
@@ -114,13 +136,13 @@
 
 salt-minion-py3:
   # RELENV VERSIONS
-  {%- for version in versions_relenv %}
+  {%- for version in relenv_versions %}
   '{{ version }}':
     full_name: 'Salt Minion {{ version }} (Python 3)'
     {% if grains['cpuarch'] == 'AMD64' -%}
-    installer: 'https://repo.saltproject.io/salt/py3/windows/minor/{{ version }}/Salt-Minion-{{ version }}-Py3-AMD64-Setup.exe'
+    installer: 'https://packages.broadcom.com/artifactory/saltproject-generic/windows/{{ version }}/Salt-Minion-{{ version }}-Py3-AMD64-Setup.exe'
     {% else -%}
-    installer: 'https://repo.saltproject.io/salt/py3/windows/minor/{{ version }}/Salt-Minion-{{ version }}-Py3-x86-Setup.exe'
+    installer: 'https://packages.broadcom.com/artifactory/saltproject-generic/windows/{{ version }}/Salt-Minion-{{ version }}-Py3-x86-Setup.exe'
     {% endif -%}
     {% raw -%}
     # install_flags: "/S /master={{ salt['pillar.get']('salt:master', 'salt.domain.tld') }} /minion-id={{ salt['pillar.get']('salt:minion:ids:' ~ grains['host'] }}"
@@ -133,28 +155,8 @@ salt-minion-py3:
     reboot: False
   {% endfor -%}
 
-  # CLASSIC VERSIONS
-  {%- for version in versions_classic %}
-  '{{ version }}':
-    full_name: 'Salt Minion {{ version }} (Python 3)'
-    {% if grains['cpuarch'] == 'AMD64' -%}
-    installer: 'https://repo.saltproject.io/windows/Salt-Minion-{{ version }}-Py3-AMD64-Setup.exe'
-    {% else -%}
-    installer: 'https://repo.saltproject.io/windows/Salt-Minion-{{ version }}-Py3-x86-Setup.exe'
-    {% endif -%}
-    {% raw -%}
-    # install_flags: "/S /master={{ salt['pillar.get']('salt:master', 'salt.domain.tld') }} /minion-id={{ salt['pillar.get']('salt:minion:ids:' ~ grains['host'] }}"
-    {% endraw -%}
-    install_flags: '/S'
-    uninstaller: '{{ install_dir }}\uninst.exe'
-    uninstall_flags: '/S'
-    msiexec: False
-    use_scheduler: True
-    reboot: False
-  {% endfor -%}
-
-  # CVE VERSIONS (REMOVE ONLY)
-  {%- for version in versions_cve %}
+  # REMOVE ONLY VERSIONS (CVE, Unsupported, Missing Artifacts)
+  {%- for version in remove_only_versions %}
   '{{ version }}':
     skip_urltest: True
     full_name: 'Salt Minion {{ version }} (Python 3)'

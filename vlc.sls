@@ -1,24 +1,28 @@
 # both 32-bit (x86) AND a 64-bit (AMD64) installer available
 {% set PROGRAM_FILES = "%ProgramFiles%" %}
-{% set versions = [
-    '3.0.18',
-    '3.0.17.4',
-    '3.0.17.3',
-    '3.0.17',
-    '3.0.16',
-    '3.0.15',
-    '3.0.14',
-    '3.0.13',
-    '3.0.12',
-    '3.0.11',
-    '3.0.10',
-    '3.0.9.2',
-    '3.0.8',
-    '3.0.7.1',
-    '3.0.7',
-    '3.0.6',
-    '3.0.4',
-] %}
+{%- load_yaml as versions %}
+# renovate: datasource=custom.vlc depName=vlc
+- '3.0.21'
+- '3.0.20'
+- '3.0.19'
+- '3.0.18'
+- '3.0.17.4'
+- '3.0.17.3'
+- '3.0.17'
+- '3.0.16'
+- '3.0.15'
+- '3.0.14'
+- '3.0.13'
+- '3.0.12'
+- '3.0.11'
+- '3.0.10'
+- '3.0.9.2'
+- '3.0.8'
+- '3.0.7.1'
+- '3.0.7'
+- '3.0.6'
+- '3.0.4'
+{%- endload %}
 
 vlc:
 {% for version in versions %}
@@ -37,25 +41,24 @@ vlc:
     reboot: False
 {% endfor %}
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Below are versions of VLC media player that have had the installer assets removed from the videolan website.
 # An uninstall only definition will remain here so the packages will show up
 # correctly in `pkg.list_pkgs` and to allow for removal using `pkg.remove`
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{% set versions = [
-    '3.0.12.1',
-    '3.0.11.1',
-    '3.0.9.1',
-    '3.0.9',
-    '3.0.5',
-    '3.0.3',
-    '3.0.2',
-    '3.0.1',
-    '3.0.0',
-    '2.2.8',
-    '2.2.6',
-] %}
+{%- load_yaml as versions %}
+- '3.0.12.1'
+- '3.0.11.1'
+- '3.0.9.1'
+- '3.0.9'
+- '3.0.5'
+- '3.0.3'
+- '3.0.2'
+- '3.0.1'
+- '3.0.0'
+- '2.2.8'
+- '2.2.6'
+{%- endload %}
 {% for version in versions %}
   '{{ version }}':
     skip_urltest: True

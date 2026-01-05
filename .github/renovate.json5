@@ -1,16 +1,68 @@
 {
   "extends": [
-    "config:recommended",
-    ":enablePreCommit",
-    ":semanticCommitScopeDisabled",
-    ":semanticPrefixChore",
-    "helpers:pinGitHubActionDigestsToSemver",
-    "regexManagers:githubActionsVersions",
+    "github>saltstack/salt-winrepo-ng//.cicd/presets/default",
   ],
+  "customDatasources": {
+      "firefox": {
+        "defaultRegistryUrlTemplate": "https://product-details.mozilla.org/1.0/firefox_versions.json",
+        "transformTemplates": [
+          "{\"releases\": [{ \"version\": $.{{packageName}} }] }",
+        ],
+      },
+      "putty": {
+        "defaultRegistryUrlTemplate": "https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html",
+        "format": "html",
+      },
+      "python-versions": {
+        "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/actions/python-versions/refs/heads/main/versions-manifest.json",
+        "transformTemplates": [
+          "{\"releases\": $ }",
+        ],
+      },
+      "vlc": {
+        "defaultRegistryUrlTemplate": "https://get.videolan.org/vlc/last/win64/",
+        "format": "html",
+      },
+    thunderbird: {
+      defaultRegistryUrlTemplate: 'https://product-details.mozilla.org/1.0/thunderbird_versions.json',
+      transformTemplates: [
+        '{"releases": [{ "version": $.{{packageName}} }] }'
+      ],
+    },
+    winrar: {
+      defaultRegistryUrlTemplate: "https://www.rarlab.com/download.htm",
+      format: "html",
+      transformTemplates: [
+        "$ ~> | releases | $each(function($v, $n) { { $n: $replace($v, /(\\d)(\\d{2})\\.exe$/, '$1.$2.exe') } } ) ~> $merge() |",
+      ],
+    },
+  },
   "packageRules": [
     {
-      "matchPackageNames": ["python/cpython"],
-      "separateMinorPatch": true,
+      "matchDatasources": ["custom.vlc"],
+      "extractVersion": "vlc-(?<version>.+)-win64\\.exe$",
+    },
+    {
+      "matchDatasources": ["custom.putty"],
+      "extractVersion": "putty-64bit-(?<version>.+)-installer\\.msi$",
+    },
+    {
+      matchDatasources: ['custom.winrar'],
+      extractVersion: 'winrar-x64-(?<version>(\\d|\\.)+)\\.exe$',
+    },
+    {
+      "matchDepNames": ["firefox-esr"],
+      "extractVersion": "(?<version>.+)esr$",
+    },
+    {
+      matchDepNames: ['thunderbird-esr'],
+      extractVersion: '(?<version>.+)esr$',
+    },
+    {
+      // Salt major version releases must be added manually to the sls file
+      "matchPackageNames": ["saltstack/salt"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
     },
   ],
 }
